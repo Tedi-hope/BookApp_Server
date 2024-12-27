@@ -52,7 +52,7 @@ router.post('/login',async(request,response)=>{
         }
         
         //Generate JWT token with userId included
-        const token=jwt.sign({userId:user._id, isLogged:true}, 'your_secret_key',{expiresIn:'1h'});
+        const token=jwt.sign({userId:user._id, isLogged:true}, 'secretCode@backend',{expiresIn:'1h'});
         return response.status(200).json({token,username:user.username});
     }
     catch(error){

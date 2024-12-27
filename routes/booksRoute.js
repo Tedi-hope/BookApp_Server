@@ -2,10 +2,14 @@ import express from 'express';
 import { Book } from '../models/bookModel.js';
 import upload from '../middleware/multer.js';
 
+
+// Import the authenticateUser middleware
+import { authenticateUser } from '../middleware/authenticateUser.js';
+
 const router=express.Router();
 
 //Route for Saving a new book
-router.post('/',upload.single('image'),async(request,response)=>{
+router.post('/',authenticateUser,upload.single('image'),async(request,response)=>{
   try{
     if(
         !request.body.title ||
@@ -28,6 +32,7 @@ router.post('/',upload.single('image'),async(request,response)=>{
         author:request.body.author,
         publishYear:request.body.publishYear,
         image:imageUrl,
+        userId:request.user.userId,//Associate the book with the logged-in user
     };
     const book=await Book.create(newBook);
     return response.status(201).send(book);
@@ -39,9 +44,9 @@ router.post('/',upload.single('image'),async(request,response)=>{
 })
 
 //Route to get all books from the database
-router.get('/',async(request,response)=>{
+router.get('/',authenticateUser,async(request,response)=>{
   try{
-     const books=await Book.find({});
+     const books=await Book.find({userId:request.user.userId});
      return response.status(200).json({
         count:books.length,
         data:books,
@@ -51,7 +56,9 @@ router.get('/',async(request,response)=>{
     console.log(error.message);
     response.status(500).send({message:error.message});
   }
+  //console.log("User Id",request.user.userId);
 })
+
 
 //Route to get a book by id from the database
 router.get('/:id',async(request,response)=>{
@@ -75,9 +82,9 @@ router.get('/:id',async(request,response)=>{
             !request.body.publishYear
         )
         {
-            return response.status(400).send({
-              message:'Send all required fields:title,author,publisher',
-            });
+          return response.status(400).send({
+            message:'Send all required fields:title,author,publisher',
+          });
         }
         const { id }=request.params;
         const result=await Book.findByIdAndUpdate(id, request.body);
